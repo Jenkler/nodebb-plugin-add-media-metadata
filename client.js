@@ -15,11 +15,11 @@ $(window).on('action:composer.loaded', function (event, data) {
 
   if(categoryId) {
     url += '?category_id=' + categoryId;
-  } else if (topicId) {
+  } else if(topicId) {
     url += '?topic_id=' + topicId;
-  } else {
+  } else if(postId) {
     url += '?post_id=' + postId;
-	}
+  } else return;
   url += '&user_id=' + userId;
 
   $.ajax({
