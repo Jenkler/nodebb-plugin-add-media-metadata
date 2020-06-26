@@ -46,7 +46,7 @@ function createPersonalTag(topicId, userId, suffix) {
 }
 function getParentCategoryNames(categoryId, callback) {
   let names = [];
-  categories.getParents([categoryId], function (a, b, c) {
+  categories.getParents([categoryId], function(a, b, c) {
     let parentCategories = b;
     for(let category of parentCategories) {
       if(!category || !category.name) continue;
@@ -56,18 +56,14 @@ function getParentCategoryNames(categoryId, callback) {
   });
 }
 function getTopic(topicId, userId, callback) {
-  topics.getTopics([topicId], userId, function (a, b, c) {
-    let topics = b;
-    callback(topics[0]);
+  topics.getTopics([topicId], userId, function(req, res, next) {
+    callback(res[0]);
   });
 }
 
-exports.actionPostSave = function(params) {
-	getTopic(params.post.tid, params.post.uid, function (topic) {
-		let isReview = params.post.content.match(
-			/\|==========>[\s\S]*\*\*Comment:\*\*[\s\S]*<==========\|/
-		);
-
+exports.actionPostEditSave = function(params) {
+  getTopic(params.post.tid, params.post.uid, function (topic) {
+    let isReview = params.post.content.match(/\|==========>[\s\S]*\*\*Comment:\*\*[\s\S]*<==========\|/);
     if(isReview) {
       getParentCategoryNames(topic.category.cid, function (names) {
         let isInMovieCategory = names.indexOf('Film') !== -1;

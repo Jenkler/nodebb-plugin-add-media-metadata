@@ -1,7 +1,8 @@
 {
   "description": "A plugin that adds metadata for different types of media",
   "hooks": [
-    { "hook": "action:post.save", "method": "actionPostSave" },
+    { "hook": "action:post.edit", "method": "actionPostEditSave" },
+    { "hook": "action:post.save", "method": "actionPostEditSave" },
     { "hook": "filter:composer.formatting", "method": "filterComposerFormatting" },
     { "hook": "static:app.load", "method": "staticAppLoad" }
   ],
