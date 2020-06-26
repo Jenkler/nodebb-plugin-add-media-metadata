@@ -1,0 +1,16 @@
+{
+  "description": "A plugin that adds metadata for different types of media",
+  "hooks": [
+    { "hook": "action:post.save", "method": "actionPostSave" },
+    { "hook": "filter:composer.formatting", "method": "filterComposerFormatting" },
+    { "hook": "static:app.load", "method": "staticAppLoad" }
+  ],
+  "id": "nodebb-plugin-add-media-metadata",
+  "library": "plugin.js",
+  "name": "NodeBB Add Media Metadata",
+  "nbbpm": {
+    "compatibility": "^1.12.2"
+  },
+	"scripts": ["client.js"],
+  "url": "https://github.com/Jenkler/nodebb-plugin-add-media-metadata"
+}
