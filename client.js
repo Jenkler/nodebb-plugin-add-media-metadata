@@ -1,60 +1,45 @@
 "use strict";
 
 $(window).on('action:composer.loaded', function (event, data) {
+  let date = new Date().toISOString().split('T')[0];
+  let url = '/api/get-media-category';
+
   $('li[data-format="add_movie_source"]').hide();
   $('li[data-format="add_movie_review"]').hide();
   $('li[data-format="add_game_source"]').hide();
   $('li[data-format="add_game_review"]').hide();
 
-  let categoryId = data.composerData.cid;
-  let isMain = data.composerData.isMain;
-  let postId = data.composerData.pid;
-  let topicId = data.composerData.tid;
-  let url = '/api/get-parent-category-names';
-  let userId = data.composerData.uid;
-
-  if(categoryId) {
-    url += '?category_id=' + categoryId;
-  } else if(topicId) {
-    url += '?topic_id=' + topicId;
-  } else if(postId) {
-    url += '?post_id=' + postId;
+  if(data.composerData.cid) {
+    url += '?category_id=' + data.composerData.cid;
+  } else if(data.composerData.tid) {
+    url += '?topic_id=' + data.composerData.tid;
+  } else if(data.composerData.pid) {
+    url += '?post_id=' + data.composerData.pid;
   } else return;
-  url += '&user_id=' + userId;
 
   $.ajax({
     success: function(names) {
-      let isInMoviews = names.indexOf('Film') !== -1;
-      let isInGames = names.indexOf('Spel') !== -1;
-      let isReply = !isMain;
-      if(isInMoviews && !isReply) {
+      if(names.indexOf('Film') !== -1 && data.composerData.isMain) {
         $('li[data-format="add_movie_source"]').show();
-      } else if (isInMoviews && isReply) {
+      } else if (names.indexOf('Film') !== -1 && !data.composerData.isMain) {
         $('li[data-format="add_movie_review"]').show();
-      }
-      if(isInGames && !isReply) {
+      } else if(names.indexOf('Spel') !== -1 && data.composerData.isMain) {
         $('li[data-format="add_game_source"]').show();
-      } else if (isInGames && isReply) {
+      } else if (names.indexOf('Spel') !== -1 && !data.composerData.isMain) {
         $('li[data-format="add_game_review"]').show();
       }
     },
     url: url,
-	});
-
-  let d = new Date();
-  let ye = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(d);
-  let mo = new Intl.DateTimeFormat('en', { month: '2-digit' }).format(d);
-  let da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(d);
-  let dateString = ye + '-' + mo + '-' + da;
+  });
 
   $('li[data-format="add_movie_review"]').on('click', function () {
-    let textAreaContent =
+    let body =
       '|==========>\n**Count:** 1\n**First:** ' +
-      dateString +
+      date +
       '\n**Last:** ' +
-      dateString +
+      date +
       '\n**Rating:** 2\n\n**Comment:**\n\n<==========|';
-    $('.write-container textarea').val(textAreaContent);
+    $('.write-container textarea').val(body);
   });
 
   $('li[data-format="add_movie_source"]').on('click', function () {
@@ -62,11 +47,11 @@ $(window).on('action:composer.loaded', function (event, data) {
   });
 
   $('body').append(`
-  <div class="modal fade" id="add-movie-source-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" style="z-index: 99999;">
+  <div class="modal fade" id="add-movie-source-modal" tabindex="-1" role="dialog" aria-labelledby="imdbid" aria-hidden="true" style="z-index: 99999;">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Imdb-ID</h5>
+          <h5 class="modal-title" id="imdbid">Imdb-ID (tt0000000) or Imdb-url</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -97,48 +82,42 @@ $(window).on('action:composer.loaded', function (event, data) {
         }
       }
     }
-    let searchUrl =
-      '/api/search?term=%3A%20Source%3A%20https%3A%2F%2Fwww.imdb.com%2Ftitle%2F' +
-      id +
-      '%2F&in=posts&matchWords=all&sortBy=relevance&sortDirection=desc&showAs=posts&_=1593174482873';
     $.ajax({
       success: function(result) {
         let posts = result.posts;
-        if(posts.length > 0) {
-          let post = posts[0];
-          let slug = post.topic.slug;
-          window.location.href = '/topic/' + slug;
-        }
+        if(posts.length > 0) window.location.href = '/topic/' + posts[0].topic.slug;
       },
-      url: searchUrl,
-		});
+      url: '/api/search?term=%3A%20Source%3A%20https%3A%2F%2Fwww.imdb.com%2Ftitle%2F' + id +
+      '%2F&in=posts&matchWords=all&sortBy=relevance&sortDirection=desc&showAs=posts&_=1593174482873',
+    });
 
     $.ajax({
       success: function(result) {
-        let fullTitle = '';
+        let title = '';
         let source = 'https://www.imdb.com/title/';
         if(result.Response === 'True') {
-          fullTitle = result.Title + ' (' + result.Year + ')';
+          title = result.Title + ' (' + result.Year + ')';
           source += id + '/';
         }
-        let textAreaContent = '|==========>\n**Source:** ' + source + '\n<==========|';
-        $('.title-container input').val(fullTitle);
-        $('.write-container textarea').val(textAreaContent);
+        let body = '|==========>\n**Source:** ' + source + '\n<==========|';
+        $('.title-container input').val(title);
+        $('.write-container textarea').val(body);
       },
-      url: '/api/fetch-movie-source?id=' + id,
+      url: '/api/get-media-source?id=' + id,
     });
+    $('#movie_source_id').val('');
   });
 
   $('li[data-format="add_game_source"]').on('click', function () {
     let source = '';
-    let textAreaContent = '|==========>\n**Source:** ' + source + '\n<==========|';
-    $('.write-container textarea').val(textAreaContent);
+    let body = '|==========>\n**Source:** ' + source + '\n<==========|';
+    $('.write-container textarea').val(body);
   });
   $('li[data-format="add_game_review"]').on('click', function () {
-    let textAreaContent =
+    let body =
       '|==========>\n**Completed:** ' +
-      dateString +
+      date +
       '\n**Format:** \n**Rating:** 2\n\n**Comment:**\n\n<==========|';
-    $('.write-container textarea').val(textAreaContent);
+    $('.write-container textarea').val(body);
   });
 });

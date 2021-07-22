@@ -3,6 +3,7 @@
   "hooks": [
     { "hook": "action:post.edit", "method": "actionPostEditSave" },
     { "hook": "action:post.save", "method": "actionPostEditSave" },
+    { "hook": "filter:admin.header.build", "method": "filterAdminHeaderBuild" },
     { "hook": "filter:composer.formatting", "method": "filterComposerFormatting" },
     { "hook": "static:app.load", "method": "staticAppLoad" }
   ],
@@ -10,8 +11,9 @@
   "library": "plugin.js",
   "name": "NodeBB Add Media Metadata",
   "nbbpm": {
-    "compatibility": "^1.12.2"
+    "compatibility": "^1.17.2"
   },
-	"scripts": ["client.js"],
+  "scripts": [ "client.js" ],
+  "templates": "templates",
   "url": "https://github.com/Jenkler/nodebb-plugin-add-media-metadata"
 }

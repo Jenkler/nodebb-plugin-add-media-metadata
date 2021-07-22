@@ -3,6 +3,9 @@
     "email": "info@jenkler.com",
     "name": "Jenkler IT AB"
   },
+  "dependencies": {
+    "got": "^11.8.2"
+  },
   "description": "A plugin that adds metadata for different types of media",
   "homepage": "https://github.com/Jenkler/nodebb-plugin-add-media-metadata",
   "keywords": [
@@ -15,7 +18,7 @@
   "main": "plugin.js",
   "name": "nodebb-plugin-add-media-metadata",
   "nbbpm": {
-    "compatibility": "^1.12.2"
+    "compatibility": "^1.17.2"
   },
   "repository": {
     "type": "git",
@@ -24,5 +27,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "1.12.20001"
+  "version": "1.17.20001"
 }

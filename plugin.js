@@ -1,108 +1,89 @@
 "use strict";
 
 const categories = require.main.require('./src/categories');
+const got = require('got');
+const meta = require.main.require('./src/meta');
 const posts = require.main.require('./src/posts');
-const request = require('request');
 const routesHelpers = require.main.require('./src/routes/helpers');
 const topics = require.main.require('./src/topics');
 
-function apiFetchMoviewSources(req, res) {
-  let url = 'http://www.omdbapi.com/?i=' + req.query.id + '&apikey=c6a5b10a';
-  request(url, function (error, response, body) {
-    res.json(JSON.parse(body));
-  });
-}
-function apiGetParentCategoryNames(req, res) {
-  let userId = 1;
-  let categoryId;
-  if(req.query.category_id) {
-    categoryId = req.query.category_id;
-    getParentCategoryNames(categoryId, function(names) {
-      res.json(names);
-    });
-  } else if(req.query.topic_id) {
-    getTopic(req.query.topic_id, userId, function(topic) {
-      categoryId = topic.category.cid;
-      getParentCategoryNames(categoryId, function(names) {
-        res.json(names);
-      });
-    });
-  } else if(req.query.post_id) {
-    posts.getPostsByPids([req.query.post_id], userId, function(a, b, c) {
-      let post = b[0];
-      getTopic(post.tid, userId, function(topic) {
-        categoryId = topic.category.cid;
-        getParentCategoryNames(categoryId, function(names) {
-          res.json(names);
-        });
-      });
-    });
-  } else {
-    res.json({});
-  }
-}
-function createPersonalTag(topicId, userId, suffix) {
-  topics.createTags(['a-uex' + userId + '-' + suffix], topicId, Date.now());
-}
-function getParentCategoryNames(categoryId, callback) {
+const apiGetMediaCategory = async (req, res) => {
+  let category_id = 0;
   let names = [];
-  categories.getParents([categoryId], function(a, b, c) {
-    let parentCategories = b;
-    for(let category of parentCategories) {
+  if(req.query.category_id) {
+    category_id = req.query.category_id;
+  } else if(req.query.topic_id) {
+    let topic = await topics.getTopics([req.query.topic_id], 1);
+    category_id = topic[0].cid;
+  } else if(req.query.post_id) {
+    let post = await posts.getPostsByPids([req.query.post_id], 1);
+    let topic = await topics.getTopics([post[0].tid], 1);
+    category_id = topic[0].cid;
+  }
+  for(let category of await categories.getParents([category_id])) {
+    if(!category || !category.name) continue;
+    names.push(category.name);
+  }
+  res.json(names);
+}
+const apiGetMediaSource = async (req, res) => {
+  const item = await got('http://www.omdbapi.com/?i=' + req.query.id + '&apikey=' + meta.config['add-media-metadata:apikey'], {responseType: 'json'});
+  res.json(item.body)
+}
+const renderAdmin = async (req, res) => {
+  res.render('admin/add-media-metadata', {});
+}
+
+exports.actionPostEditSave = async (data) => {
+  if(data.post.content.match(/\|==========>[\s\S]*\*\*Comment:\*\*[\s\S]*<==========\|/)) {
+    let names = [];
+    let topic = await topics.getTopics([data.post.tid], data.post.uid);
+    for(let category of await categories.getParents([topic[0].cid])) {
       if(!category || !category.name) continue;
       names.push(category.name);
     }
-    callback(names);
-  });
-}
-function getTopic(topicId, userId, callback) {
-  topics.getTopics([topicId], userId, function(req, res, next) {
-    callback(res[0]);
-  });
-}
-
-exports.actionPostEditSave = function(params) {
-  getTopic(params.post.tid, params.post.uid, function (topic) {
-    let isReview = params.post.content.match(/\|==========>[\s\S]*\*\*Comment:\*\*[\s\S]*<==========\|/);
-    if(isReview) {
-      getParentCategoryNames(topic.category.cid, function (names) {
-        let isInMovieCategory = names.indexOf('Film') !== -1;
-        let isInGameCategory = names.indexOf('Spel') !== -1;
-        if(isInMovieCategory) {
-          createPersonalTag(params.post.tid, params.post.uid, 'film');
-        } else if(isInGameCategory) {
-          createPersonalTag(params.post.tid, params.post.uid, 'spel');
-        }
-      });
+    if(names.indexOf('Film') !== -1) {
+      topics.createTags(['a-uex' + data.post.uid + '-film'], data.post.tid, Date.now());
+    } else if(names.indexOf('Spel') !== -1) {
+      topics.createTags(['a-uex' + data.post.uid + '-spel'], data.post.tid, Date.now());
     }
-  });
+  }
 };
-exports.filterComposerFormatting = function(payload, callback) {
-  payload.options.push({
+exports.filterAdminHeaderBuild = async (data) => {
+  data.plugins.push({
+    icon: 'fa-link',
+    name: 'Add Media Metadata',
+    route: '/add-media-metadata'
+  });
+  return data;
+};
+exports.filterComposerFormatting = async (data) => {
+  data.options.push({
     className: 'add-movie-source fa fa-video-camera',
     name: 'add_movie_source',
-    title: 'Add movie source',
-  });
-  payload.options.push({
+    title: 'Add movie source'
+  },
+  {
     className: 'add-movie-review fa fa-video-camera',
     name: 'add_movie_review',
-    title: 'Add movie review',
-  });
-  payload.options.push({
+    title: 'Add movie review'
+  },
+  {
     className: 'add-game-source fa fa-gamepad',
     name: 'add_game_source',
-    title: 'Add game source',
-  });
-  payload.options.push({
+    title: 'Add game source'
+  },
+  {
     className: 'add-game-review fa fa-gamepad',
     name: 'add_game_review',
-    title: 'Add game review',
+    title: 'Add game review'
   });
-  callback(null, payload);
+  return data;
 };
-exports.staticAppLoad = function(data, callback) {
+exports.staticAppLoad = async (data) => {
   console.log('Loading Jenkler Add Media Metadata plugin ' + require('./package.json').version);
-  routesHelpers.setupPageRoute(data.router, '/fetch-movie-source', data.middleware, [], apiFetchMoviewSources);
-  routesHelpers.setupPageRoute(data.router, '/get-parent-category-names', data.middleware, [], apiGetParentCategoryNames);
-  callback();
+  data.router.get('/admin/add-media-metadata', data.middleware.admin.buildHeader, renderAdmin);
+  data.router.get('/api/admin/add-media-metadata', renderAdmin);
+  routesHelpers.setupPageRoute(data.router, '/get-media-source', data.middleware, [], apiGetMediaSource);
+  routesHelpers.setupPageRoute(data.router, '/get-media-category', data.middleware, [], apiGetMediaCategory);
 };
