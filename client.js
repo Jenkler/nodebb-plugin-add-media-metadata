@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 $(window).on('action:composer.loaded', function (event, data) {
   let date = new Date().toISOString().split('T')[0];

@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const categories = require.main.require('./src/categories');
 const got = require('got');
@@ -27,7 +27,8 @@ const apiGetMediaCategory = async (req, res) => {
   res.json(names);
 }
 const apiGetMediaSource = async (req, res) => {
-  const item = await got('http://www.omdbapi.com/?i=' + req.query.id + '&apikey=' + meta.config['add-media-metadata:apikey'], {responseType: 'json'});
+  let settings = await meta.settings.get('add-media-metadata');
+  const item = await got('https://www.omdbapi.com/?i=' + req.query.id + '&apikey=' + settings?.apikey ?? '', { responseType: 'json' });
   res.json(item.body)
 }
 const renderAdmin = async (req, res) => {

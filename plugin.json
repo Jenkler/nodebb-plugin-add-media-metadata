@@ -1,4 +1,5 @@
 {
+  "acpScripts": [ "admin.js" ],
   "description": "A plugin that adds metadata for different types of media",
   "hooks": [
     { "hook": "action:post.edit", "method": "actionPostEditSave" },
