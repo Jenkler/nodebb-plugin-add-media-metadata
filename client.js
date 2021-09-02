@@ -68,20 +68,8 @@ $(window).on('action:composer.loaded', function (event, data) {
   </div>`);
 
   $('#movie_source_ok_button').on('click', function() {
-    let id = $('#movie_source_id').val();
-    let isUrl = id.startsWith('http');
-    if(isUrl) {
-      let url = id;
-      let nextIsId = false;
-      for(let part of url.split('/')) {
-        if(part === 'title') {
-          nextIsId = true;
-        } else if(nextIsId) {
-          id = part;
-          break;
-        }
-      }
-    }
+    let id = $('#movie_source_id').val().match(/tt[0-9]{4,20}/i);
+    if(id === null) location.reload();
     $.ajax({
       success: function(result) {
         let posts = result.posts;

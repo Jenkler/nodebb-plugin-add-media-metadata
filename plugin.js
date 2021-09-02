@@ -44,9 +44,9 @@ exports.actionPostEditSave = async (data) => {
       names.push(category.name);
     }
     if(names.indexOf('Film') !== -1) {
-      topics.createTags(['a-uex' + data.post.uid + '-film'], data.post.tid, Date.now());
+      await topics.addTags(['a-uex' + data.post.uid + '-film'], [data.post.tid]);
     } else if(names.indexOf('Spel') !== -1) {
-      topics.createTags(['a-uex' + data.post.uid + '-spel'], data.post.tid, Date.now());
+      await topics.addTags(['a-uex' + data.post.uid + '-spel'], [data.post.tid]);
     }
   }
 };
